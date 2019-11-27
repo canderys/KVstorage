@@ -1,4 +1,5 @@
 import os
+import sys
 
 
 class KVstorage:
@@ -17,6 +18,22 @@ class KVstorage:
 
     def keys(self):
         return self.dict.keys()
+
+
+
+class DictMemoryStorage:
+    def __init__(self):
+        self.data = {}
+
+    def __getitem__(self, key):
+        return self.data[key]
+
+    def __setitem__(self, key, value):
+        self.data[key] = value
+        print('dict size: ' + str(self.size()))
+
+    def size(self):
+        return sys.getsizeof(self.data)
 
 
 class MemoryStorage:
