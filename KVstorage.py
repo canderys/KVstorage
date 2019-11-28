@@ -1,11 +1,13 @@
 import os
 import sys
+import pickle
 
 
 class KVstorage:
 
     def __init__(self):
         self.dict = {}
+        self.file_number = 0
 
     def __getitem__(self, key):
         return self.dict[key]
@@ -20,20 +22,60 @@ class KVstorage:
         return self.dict.keys()
 
 
-
 class DictMemoryStorage:
     def __init__(self):
-        self.data = {}
+        self.dict = {}
+        self.max_file_number = 0
+        filename = self.get_last_filename()
+        self.load_data(filename)
+
+    def __del__(self):
+        filename = self.get_filename()
+        self.save(filename)
 
     def __getitem__(self, key):
-        return self.data[key]
+        if key in self.dict:
+            return self.dict[key]
+        else:
+            self.save({"data/{}.dt"}.format(self.max_file_number))
+            self.max_file_number = self.max_file_number + 1
+        return None
 
     def __setitem__(self, key, value):
-        self.data[key] = value
+        self.dict[key] = value
         print('dict size: ' + str(self.size()))
 
     def size(self):
-        return sys.getsizeof(self.data)
+        return sys.getsizeof(self.dict)
+
+    def save(self, filename):
+        with open(filename, 'wb') as file:
+            pickle.dump(self.dict, file)
+        self.dict = {}
+
+    def get_filename(self):
+        while True:
+            filename = 'data/{}.dt'.format(self.max_file_number)
+            if not os.path.isfile(filename):
+                return filename
+            self.max_file_number += 1
+
+    @staticmethod
+    def get_last_filename():
+        filename_list = os.listdir('data')
+        return filename_list[-1]
+
+    def load_data(self, filename):
+        with open(filename, 'rb') as file:
+            self.dict = pickle.load(file)
+
+    def find(self, key):
+        filename_list = os.listdir('data')
+        for filename in filename_list:
+            self.load_data(filename)
+            if key in self.dict:
+                return self.dict[key]
+        return None
 
 
 class MemoryStorage:
