@@ -25,9 +25,10 @@ class KVstorage:
 class DictMemoryStorage:
     def __init__(self):
         self.dict = {}
-        self.max_file_number = 0
-        filename = self.get_last_filename()
-        self.load_data(filename)
+        self.temp_dict = {}
+        self.current_filename = self.get_last_filename()
+        self.load_data(self.current_filename)
+        self.max_size = 10000
 
     def __del__(self):
         filename = self.get_filename()
@@ -37,16 +38,49 @@ class DictMemoryStorage:
         if key in self.dict:
             return self.dict[key]
         else:
-            self.save({"data/{}.dt"}.format(self.max_file_number))
-            self.max_file_number = self.max_file_number + 1
-        return None
+            value = None
+            self.save(self.current_filename)
+            filename_list = os.listdir('data')
+            for filename in filename_list:
+                self.load_data(filename)
+                if key in self.dict:
+                    value = self.dict[key]
+            self.load_data(self.current_filename)
+            return value
 
     def __setitem__(self, key, value):
-        self.dict[key] = value
-        print('dict size: ' + str(self.size()))
+        if sys.getsizeof(key) + sys.getsizeof(value) > self.max_size:
+            print("object too big!")
+            return
+        # found_in_file = self.find_and_open(key)
+        # self.append(key, value)
+        # if found_in_file:
+        #     self.dict = self.temp_dict
 
-    def size(self):
-        return sys.getsizeof(self.dict)
+        if key in self.dict:
+            self.append(key, value)
+        else:
+            self.temp_dict = self.dict
+            filename = self.find_and_open(key)
+            if filename is not None:
+                self.append(key, value, filename)
+
+    def find_and_open(self, key):
+        filename_list = os.listdir('data')
+        for filename in filename_list:
+            self.load_data(filename)
+            if key in self.dict:
+                return filename
+        return None
+
+    def append(self, key, value, filename=None):
+        self.dict[key] = value
+        if sys.getsizeof(self.dict) > self.max_size:
+            del self.dict[key]
+            if filename is None:
+                filename = self.get_filename()
+            self.save(filename)
+            self.dict[key] = value
 
     def save(self, filename):
         with open(filename, 'wb') as file:
@@ -54,76 +88,14 @@ class DictMemoryStorage:
         self.dict = {}
 
     def get_filename(self):
+        file_number = 0
         while True:
-            filename = 'data/{}.dt'.format(self.max_file_number)
+            filename = 'data/{}.dt'.format(file_number)
             if not os.path.isfile(filename):
                 return filename
-            self.max_file_number += 1
-
-    @staticmethod
-    def get_last_filename():
-        filename_list = os.listdir('data')
-        return filename_list[-1]
+            file_number += 1
 
     def load_data(self, filename):
-        with open(filename, 'rb') as file:
-            self.dict = pickle.load(file)
-
-    def find(self, key):
-        filename_list = os.listdir('data')
-        for filename in filename_list:
-            self.load_data(filename)
-            if key in self.dict:
-                return self.dict[key]
-        return None
-
-
-class MemoryStorage:
-    def __init__(self, data=str()):
-        self.data = data
-
-    def __del__(self):
-        self._save()
-
-    def print(self):
-        print(self.data)
-
-    def append(self, key, value):
-        if not self._can_append_item():
-            self._save()
-            self.data = str()
-
-        self.data = self.data + '{} {} {}\n'.format(hash(str(key) + str(value)), key, value)
-
-
-    def get(self, key):
-        pass
-        # self.data[key]
-
-    def _can_append_item(self):
-        return True
-
-    def _save(self):
-        pass
-
-
-class FileStorage:
-    pass
-
-
-# class FileStorage:
-#     def __init__(self):
-#         file_name = 'file_storage.fs'
-#         if not os.path.exists(file_name):
-#             self.file = open(file_name, 'rw')
-#
-#     def __del__(self):
-#         if self.file:
-#             self.file.close()
-#
-#     def append(self, key, value):
-#         pass
-#
-#     def find(self, key):
-#         pass
-
+        if os.path.isfile(filename):
+            with open(filename, 'rb') as file:
+                self.dict = pickle.load(file)
