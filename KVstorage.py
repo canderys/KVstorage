@@ -3,31 +3,10 @@ import sys
 import pickle
 
 
-class KVstorage:
-
-    def __init__(self):
-        self.dict = {}
-        self.file_number = 0
-
-    def __getitem__(self, key):
-        return self.dict[key]
-
-    def __setitem__(self, key, value):
-        self.dict[key] = value
-
-    def values(self):
-        return self.dict.values()
-
-    def keys(self):
-        return self.dict.keys()
-
-
-class DictMemoryStorage:
+class KVStorage:
     def __init__(self):
         self.dict = {}
         self.temp_dict = {}
-        self.current_filename = self.get_last_filename()
-        self.load_data(self.current_filename)
         self.max_size = 10000
 
     def __del__(self):
@@ -39,31 +18,41 @@ class DictMemoryStorage:
             return self.dict[key]
         else:
             value = None
-            self.save(self.current_filename)
-            filename_list = os.listdir('data')
-            for filename in filename_list:
-                self.load_data(filename)
-                if key in self.dict:
-                    value = self.dict[key]
-            self.load_data(self.current_filename)
+            self.temp_dict = self.dict
+            if find_and_open(self, key):
+                value = self.dict[key]
+            self.dict = self.temp_dict
             return value
 
     def __setitem__(self, key, value):
+        # если объем пары ключ-значение больше допустимого размера просто выходим
         if sys.getsizeof(key) + sys.getsizeof(value) > self.max_size:
-            print("object too big!")
+            print("object to big!")
             return
-        # found_in_file = self.find_and_open(key)
-        # self.append(key, value)
-        # if found_in_file:
-        #     self.dict = self.temp_dict
-
         if key in self.dict:
-            self.append(key, value)
+        # нашли ключ в памяти
+            filename = self.get_filename()
+            append(key, values, filename)
         else:
+        # не нашли ключ в памяти
             self.temp_dict = self.dict
-            filename = self.find_and_open(key)
-            if filename is not None:
-                self.append(key, value, filename)
+            # ищем ключ в файлах, по очереди загружаем каждый файл, и смотрим есть ли в нем ключ
+            file_with_key = self.find_and_open(key)
+            if file_with_key is None:
+            # не нашли ключ ни в памяти, ни в файлах
+                self.dict = self.temp_dict
+                filename = self.get_filename()
+                append(key, values, filename)
+            else:
+            # нашли ключ в одном из файлов
+                self.append(key, value, file_with_key)
+
+    def append(self, key, value, filename):
+        self.dict[key] = value
+        if sys.getsizeof(self.dict) > self.max_size:
+            del self.dict[key]
+            self.save(filename)
+            self.dict[key] = value
 
     def find_and_open(self, key):
         filename_list = os.listdir('data')
@@ -72,15 +61,6 @@ class DictMemoryStorage:
             if key in self.dict:
                 return filename
         return None
-
-    def append(self, key, value, filename=None):
-        self.dict[key] = value
-        if sys.getsizeof(self.dict) > self.max_size:
-            del self.dict[key]
-            if filename is None:
-                filename = self.get_filename()
-            self.save(filename)
-            self.dict[key] = value
 
     def save(self, filename):
         with open(filename, 'wb') as file:
