@@ -5,97 +5,103 @@ import pickle
 
 class KVStorage:
     def __init__(self):
-        print('init')
         self.dict = {}
-        self.temp_dict = {}
-        self.max_size = 10000
-        self.prev_filename = None
-        self.append_new_files = None
-        self.current_filename = None
-        self.last_saved = None
+        self.dict_file = None
+        self.max_size = 200
         if not os.path.exists('data'):
             os.mkdir('data')
+            # print('create data')
         filename_list = os.listdir('data')
+        # print('list of files: {}'.format(filename_list))
         if filename_list:
-            self.prev_filename = filename_list[-1]
-            print('prev_file_name = {}'.format(prev_filename))
-            self.load_data(self.prev_filename)
+            filename = 'data/' + filename_list[-1]
+            self.load_data(filename)
+        else:
+            self.init_new_storage()
 
     def __del__(self):
-        print('del')
-        filename = self.get_filename()
-        self.save(filename)
-
-    def print_dict(self):
-        print(self.dict)
+        # print('dict file: {}'.format(self.dict_file))
+        self.save(self.dict_file)
 
     def __getitem__(self, key):
-        print('getittem({})'.format(key))
+        # print('getittem({})'.format(key))
         if key in self.dict:
             return self.dict[key]
         else:
             value = None
-            self.temp_dict = self.dict
+            self.save(self.dict_file)
+            current = self.dict_file
             if self.find_and_open(key):
                 value = self.dict[key]
-            self.dict = self.temp_dict
+            self.load_data(current)
             return value
 
     def __setitem__(self, key, value):
-        print('setitem({}, {})'.format(key, value))
+        # print('current size: {}'.format(sys.getsizeof(self.dict)))
+        # print('setitem({}, {})'.format(key, value))
         # если объем пары ключ-значение больше допустимого размера просто выходим
         if sys.getsizeof(key) + sys.getsizeof(value) > self.max_size:
-            print("object to big!")
+            # print("object to big!")
             return
         if key in self.dict:
         # нашли ключ в памяти
-            self.append(key, values, filename)
+            self.append(key, value)
         else:
         # не нашли ключ в памяти
-            self.temp_dict = self.dict
+            self.save(self.dict_file)
+            current = self.dict_file
             # ищем ключ в файлах, по очереди загружаем каждый файл, и смотрим есть ли в нем ключ
             file_with_key = self.find_and_open(key)
             if file_with_key is None:
             # не нашли ключ ни в памяти, ни в файлах
-                self.dict = self.temp_dict
-                self.append(key, value, filename)
+                self.append(key, value)
             else:
             # нашли ключ в одном из файлов
                 self.dict[key] = value
                 if sys.getsizeof(self.dict) <= self.max_size:
                 # если перезаписать значение в файле в котором оно уже было, размер файла не привысит лимит
                     self.save(file_with_key)
-                    self.dict = self.temp_dict
+                    self.load_data(current)
                 else:
                 # если перезаписать значение в файле в котором оно уже было, то она привысит лимит объема,
-                # поэтому нужно удалить пару ключ-значение из файла и добавить в текущий буфеер, если
+                # поэтому нужно удалить пару ключ-значение из файла и добавить в текущий буфер, если
                 # это не получится (текущий буфер привысит лимит по размеру), то записываем текущий буфер и
                 # создаем новый буфер
                     del self.dict[key]
+                    self.load_data(current)
                     self.append(key, value)
 
-    def append(self, key, value, filename):
+    def append(self, key, value):
         self.dict[key] = value
         if sys.getsizeof(self.dict) > self.max_size:
             del self.dict[key]
-            filename = self.get_filename()
-            self.save(filename)
+            self.init_new_storage()
             self.dict[key] = value
 
     def find_and_open(self, key):
         filename_list = os.listdir('data')
         for filename in filename_list:
-            self.load_data(filename)
+            self.load_data('data/{}'.format(filename))
             if key in self.dict:
                 return filename
         return None
 
-    def save(self, filename):
-        print('save({})'.format(filename))
-        with open(filename, 'wb') as file:
-            pickle.dump(self.dict, file)
-            self.last_saved = filename
+    def load_data(self, filename):
+        # print('load_data({})'.format(filename))
+        if os.path.isfile(filename):
+            with open(filename, 'rb') as file:
+                self.dict = pickle.load(file)
+                # print('loaded dict: {}'.format(self.dict))
+                self.dict_file = filename
+
+    def init_new_storage(self):
+        if self.dict_file:
+            self.save(self.dict_file)
         self.dict = {}
+        self.dict_file = self.get_filename()
+        self.save(self.dict_file)
+        # print('init_new_storage: {}'.format(self.dict_file))
+
 
     def get_filename(self):
         file_number = 0
@@ -105,9 +111,12 @@ class KVStorage:
                 return filename
             file_number += 1
 
-    def load_data(self, filename):
-        print('load_data({})'.format(filename))
-        if os.path.isfile(filename):
-            with open(filename, 'rb') as file:
-                self.dict = pickle.load(file)
-                self.current_filename = filename
+
+    def save(self, filename):
+        # print('save({})'.format(filename))
+        with open(filename, 'wb') as file:
+            pickle.dump(self.dict, file)
+
+    def print(self):
+        print(self.dict)
+
