@@ -4,7 +4,7 @@ import pickle
 
 
 class KVstorage:
-    def __init__(self, max_size=200):
+    def __init__(self, max_size=300):
         self.dict = {}
         self.dict_file = None
         self.max_size = max_size
@@ -78,6 +78,31 @@ class KVstorage:
                     del self.dict[key]
                     self.load_data(current)
                     self.append(key, value)
+        print(self)
+
+    def __contains__(self, key):
+        if key in self.dict:
+            return True
+        else:
+            self.save(self.dict_file)
+            current = self.dict_file
+            file_with_key = self.find_and_open(key)
+            if file_with_key:
+                self.load_data(current)
+                return True
+        return False
+
+    def __repr__(self):
+        self.save(self.dict_file)
+        current = self.dict_file
+        filename_list = os.listdir('data')
+        info = 'KVstorage (current file is {}):'
+        for filename in filename_list:
+            fullname = 'data/{}'.format(filename)
+            self.load_data(fullname)
+            info += '\nfilename: {}, size: {}, dict: {}'.format(fullname, sys.getsizeof(self.dict), self.dict)
+        self.load_data(current)
+        return info
 
     def append(self, key, value):
         self.dict[key] = value
@@ -89,9 +114,10 @@ class KVstorage:
     def find_and_open(self, key):
         filename_list = os.listdir('data')
         for filename in filename_list:
-            self.load_data('data/{}'.format(filename))
+            fullname = 'data/{}'.format(filename)
+            self.load_data(fullname)
             if key in self.dict:
-                return filename
+                return fullname
         return None
 
     def load_data(self, filename):
@@ -122,6 +148,3 @@ class KVstorage:
         # print('save({})'.format(filename))
         with open(filename, 'wb') as file:
             pickle.dump(self.dict, file)
-
-    def print(self):
-        print(self.dict)
