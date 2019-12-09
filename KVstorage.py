@@ -25,6 +25,9 @@ class KVstorage:
 
     def __getitem__(self, key):
         # print('getittem({})'.format(key))
+        if self.is_invalid_key(key):
+            print('Error invalid key')
+            return None
         if key in self.dict:
             return self.dict[key]
         else:
@@ -41,8 +44,11 @@ class KVstorage:
         # print('setitem({}, {})'.format(key, value))
         # если объем пары ключ-значение больше
         # допустимого размера просто выходим
+        if self.is_invalid_key_or_value(key, value):
+            print('Error: invalid key or value')
+            return
         if sys.getsizeof(key) + sys.getsizeof(value) > self.max_size:
-            # print("object to big!")
+            print("Error: object to big!")
             return
         if key in self.dict:
             # нашли ключ в памяти
@@ -81,6 +87,9 @@ class KVstorage:
         print(self)
 
     def __contains__(self, key):
+        if self.is_invalid_key(key):
+            print('Error: invalid key')
+            return None
         if key in self.dict:
             return True
         else:
@@ -96,7 +105,7 @@ class KVstorage:
         self.save(self.dict_file)
         current = self.dict_file
         filename_list = os.listdir('data')
-        info = 'KVstorage (current file is {}):'
+        info = 'KVstorage (current file is {}):'.format(current)
         for filename in filename_list:
             fullname = 'data/{}'.format(filename)
             self.load_data(fullname)
@@ -148,3 +157,9 @@ class KVstorage:
         # print('save({})'.format(filename))
         with open(filename, 'wb') as file:
             pickle.dump(self.dict, file)
+
+    def is_invalid_key(self, key):
+        return not isinstance(key, (int, float, str))
+
+    def is_invalid_key_or_value(self, key, value):
+        return not (isinstance(key, (int, float, str)) and isinstance(value, (int, float, str)))
