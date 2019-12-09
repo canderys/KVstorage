@@ -3,11 +3,11 @@ import sys
 import pickle
 
 
-class KVStorage:
-    def __init__(self):
+class KVstorage:
+    def __init__(self, max_size=200):
         self.dict = {}
         self.dict_file = None
-        self.max_size = 200
+        self.max_size = max_size
         if not os.path.exists('data'):
             os.mkdir('data')
             # print('create data')
@@ -39,34 +39,42 @@ class KVStorage:
     def __setitem__(self, key, value):
         # print('current size: {}'.format(sys.getsizeof(self.dict)))
         # print('setitem({}, {})'.format(key, value))
-        # если объем пары ключ-значение больше допустимого размера просто выходим
+        # если объем пары ключ-значение больше
+        # допустимого размера просто выходим
         if sys.getsizeof(key) + sys.getsizeof(value) > self.max_size:
             # print("object to big!")
             return
         if key in self.dict:
-        # нашли ключ в памяти
+            # нашли ключ в памяти
             self.append(key, value)
         else:
-        # не нашли ключ в памяти
+            # не нашли ключ в памяти
             self.save(self.dict_file)
             current = self.dict_file
-            # ищем ключ в файлах, по очереди загружаем каждый файл, и смотрим есть ли в нем ключ
+            # ищем ключ в файлах, по очереди загружаем каждый файл,
+            # и смотрим есть ли в нем ключ
             file_with_key = self.find_and_open(key)
             if file_with_key is None:
-            # не нашли ключ ни в памяти, ни в файлах
+                # не нашли ключ ни в памяти, ни в файлах
                 self.append(key, value)
             else:
-            # нашли ключ в одном из файлов
+                # нашли ключ в одном из файлов
                 self.dict[key] = value
                 if sys.getsizeof(self.dict) <= self.max_size:
-                # если перезаписать значение в файле в котором оно уже было, размер файла не привысит лимит
-                    self.save(file_with_key)
+                    # если перезаписать значение в файле в котором оно
+                    # уже было, размер файла не привысит лимит
+                    self.save('data/' + file_with_key)
                     self.load_data(current)
                 else:
-                # если перезаписать значение в файле в котором оно уже было, то она привысит лимит объема,
-                # поэтому нужно удалить пару ключ-значение из файла и добавить в текущий буфер, если
-                # это не получится (текущий буфер привысит лимит по размеру), то записываем текущий буфер и
-                # создаем новый буфер
+                    # если перезаписать значение в файле
+                    # в котором оно уже было,
+                    # то она привысит лимит объема,
+                    # поэтому нужно удалить пару ключ-значение из файла и
+                    # добавить в текущий буфер, если
+                    # это не получится
+                    # (текущий буфер привысит лимит по размеру),
+                    # то записываем текущий буфер и
+                    # создаем новый буфер
                     del self.dict[key]
                     self.load_data(current)
                     self.append(key, value)
@@ -102,7 +110,6 @@ class KVStorage:
         self.save(self.dict_file)
         # print('init_new_storage: {}'.format(self.dict_file))
 
-
     def get_filename(self):
         file_number = 0
         while True:
@@ -111,7 +118,6 @@ class KVStorage:
                 return filename
             file_number += 1
 
-
     def save(self, filename):
         # print('save({})'.format(filename))
         with open(filename, 'wb') as file:
@@ -119,4 +125,3 @@ class KVStorage:
 
     def print(self):
         print(self.dict)
-
