@@ -1,7 +1,7 @@
 import unittest
 import os
 import sys
-from KVstorage import KVstorage
+from kvstorage import KVstorage
 
 
 class TestKVStorage(unittest.TestCase):

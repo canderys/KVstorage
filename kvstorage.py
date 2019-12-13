@@ -163,3 +163,37 @@ class KVstorage:
 
     def is_invalid_key_or_value(self, key, value):
         return not (isinstance(key, (int, float, str)) and isinstance(value, (int, float, str)))
+
+
+if __name__ == '__main__':
+    # print('Welcome to KVstorage!')
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument('path')
+    parser.add_argument('op')
+    parser.add_argument('key_value', nargs='+')
+    args = parser.parse_args()
+    # print('path: {}, operation: {}, key and values: {}'.format(args.path, args.op, args.key_value))
+
+    k = KVstorage()
+
+    if args.op == 'set':
+        # print('it is set operation')
+        if len(args.key_value) < 2 or len(args.key_value) % 2 != 0:
+            print('invalid key_value for set operation')
+            del k
+            exit(0)
+        k[args.key_value[0]] = args.key_value[1]
+    elif args.op == 'get':
+        # print('it is get operation')
+        if not args.key_value:
+            print('invalid key_value for get operation')
+            del k
+            exit(0)
+        print(k[args.key_value[0]])
+    elif args.op == 'in':
+        print('it is in operation')
+    else:
+        print('invalid operation!')
+
+    del k
