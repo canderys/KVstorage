@@ -175,22 +175,29 @@ if __name__ == '__main__':
     args = parser.parse_args()
     # print('path: {}, operation: {}, key and values: {}'.format(args.path, args.op, args.key_value))
 
-
-
     try:
         k = KVstorage()
         if args.op == 'set':
             # print('it is set operation')
             if len(args.key_value) < 2 or len(args.key_value) % 2 != 0:
                 raise ValueError
-            k[args.key_value[0]] = args.key_value[1]
+            for i in range(0, len(args.key_value), 2):
+                # print(args.key_value[i], args.key_value[i + 1])
+                k[args.key_value[i]] = args.key_value[i + 1]
         elif args.op == 'get':
             # print('it is get operation')
             if not args.key_value:
                 raise ValueError
-            print(k[args.key_value[0]])
+            for i in range(0, len(args.key_value)):
+                # print(args.key_value[i])
+                print(k[args.key_value[i]])
         elif args.op == 'in':
-            print('it is in operation')
+            # print('it is in operation')
+            if not args.key_value:
+                raise ValueError
+            for i in range(0, len(args.key_value)):
+                # print(args.key_value[i])
+                print(args.key_value[i] in k)
         else:
             print('invalid operation!')
         del k
