@@ -69,7 +69,7 @@ class KVstorage:
                 if sys.getsizeof(self.dict) <= self.max_size:
                     # если перезаписать значение в файле в котором оно
                     # уже было, размер файла не привысит лимит
-                    self.save('data/' + file_with_key)
+                    self.save(file_with_key)
                     self.load_data(current)
                 else:
                     # если перезаписать значение в файле
@@ -175,25 +175,28 @@ if __name__ == '__main__':
     args = parser.parse_args()
     # print('path: {}, operation: {}, key and values: {}'.format(args.path, args.op, args.key_value))
 
-    k = KVstorage()
 
-    if args.op == 'set':
-        # print('it is set operation')
-        if len(args.key_value) < 2 or len(args.key_value) % 2 != 0:
-            print('invalid key_value for set operation')
-            del k
-            exit(0)
-        k[args.key_value[0]] = args.key_value[1]
-    elif args.op == 'get':
-        # print('it is get operation')
-        if not args.key_value:
-            print('invalid key_value for get operation')
-            del k
-            exit(0)
-        print(k[args.key_value[0]])
-    elif args.op == 'in':
-        print('it is in operation')
-    else:
-        print('invalid operation!')
 
-    del k
+    try:
+        k = KVstorage()
+        if args.op == 'set':
+            # print('it is set operation')
+            if len(args.key_value) < 2 or len(args.key_value) % 2 != 0:
+                raise ValueError
+            k[args.key_value[0]] = args.key_value[1]
+        elif args.op == 'get':
+            # print('it is get operation')
+            if not args.key_value:
+                raise ValueError
+            print(k[args.key_value[0]])
+        elif args.op == 'in':
+            print('it is in operation')
+        else:
+            print('invalid operation!')
+        del k
+    except ValueError:
+        print('invalid enter key or value')
+        del k
+    except:
+        print('Unexpected error', sys.exc_info()[0])
+        del k
