@@ -4,17 +4,20 @@ import pickle
 
 
 class KVstorage:
-    def __init__(self, max_size=300):
+    def __init__(self, max_size=300, path='.'):
         self.dict = {}
         self.dict_file = None
         self.max_size = max_size
-        if not os.path.exists('data'):
-            os.mkdir('data')
+        self.path = path + '/kv_storage_data'
+        if not os.path.exists(path):
+            os.mkdir(path)
+        if not os.path.exists(self.path):
+            os.mkdir(self.path)
             # print('create data')
-        filename_list = os.listdir('data')
+        filename_list = os.listdir(self.path)
         # print('list of files: {}'.format(filename_list))
         if filename_list:
-            filename = 'data/' + filename_list[-1]
+            filename = self.path + '/' + filename_list[-1]
             self.load_data(filename)
         else:
             self.init_new_storage()
@@ -104,10 +107,10 @@ class KVstorage:
     def __repr__(self):
         self.save(self.dict_file)
         current = self.dict_file
-        filename_list = os.listdir('data')
+        filename_list = os.listdir(self.path)
         info = 'KVstorage (current file is {}):'.format(current)
         for filename in filename_list:
-            fullname = 'data/{}'.format(filename)
+            fullname = self.path + '/{}'.format(filename)
             self.load_data(fullname)
             info += '\nfilename: {}, size: {}, dict: {}'.format(fullname, sys.getsizeof(self.dict), self.dict)
         self.load_data(current)
@@ -121,9 +124,9 @@ class KVstorage:
             self.dict[key] = value
 
     def find_and_open(self, key):
-        filename_list = os.listdir('data')
+        filename_list = os.listdir(self.path)
         for filename in filename_list:
-            fullname = 'data/{}'.format(filename)
+            fullname = self.path + '/{}'.format(filename)
             self.load_data(fullname)
             if key in self.dict:
                 return fullname
@@ -148,7 +151,7 @@ class KVstorage:
     def get_filename(self):
         file_number = 0
         while True:
-            filename = 'data/{}.dt'.format(file_number)
+            filename = self.path + '/{}.dt'.format(file_number)
             if not os.path.isfile(filename):
                 return filename
             file_number += 1
@@ -176,7 +179,7 @@ if __name__ == '__main__':
     # print('path: {}, operation: {}, key and values: {}'.format(args.path, args.op, args.key_value))
 
     try:
-        k = KVstorage()
+        k = KVstorage(300, args.path)
         if args.op == 'set':
             # print('it is set operation')
             if len(args.key_value) < 2 or len(args.key_value) % 2 != 0:

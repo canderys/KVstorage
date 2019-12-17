@@ -13,12 +13,12 @@ class TestKVStorage(unittest.TestCase):
         kvstorage = KVstorage(1000)
         for i in range(100):
             kvstorage[i] = "test"
-        filename_list = os.listdir('data')
+        filename_list = os.listdir(kvstorage.path)
         for count in range(3):
             self.assertTrue("{}.dt".format(count) in filename_list)
             count += 1
         for file in filename_list:
-            self.delete_list.append("data/{}".format(file))
+            self.delete_list.append(kvstorage.path + "/{}".format(file))
 
     def test_contains_data(self):
         kvstorage = KVstorage(1000)
@@ -32,8 +32,8 @@ class TestKVStorage(unittest.TestCase):
         self.assertEqual(kvstorage[101], "test")
         self.assertEqual(kvstorage[1], "test")
         self.assertEqual(kvstorage[199], "test")
-        for file in os.listdir('data'):
-            self.delete_list.append("data/{}".format(file))
+        for file in os.listdir(kvstorage.path):
+            self.delete_list.append(kvstorage.path + "/{}".format(file))
 
     def tearDown(self):
         for data in self.delete_list:
