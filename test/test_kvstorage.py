@@ -1,6 +1,7 @@
 import unittest
 import os
 import sys
+sys.path.append("..")
 from kvstorage import KVstorage
 
 
@@ -35,6 +36,20 @@ class TestKVStorage(unittest.TestCase):
         for file in os.listdir(kvstorage.path):
             self.delete_list.append(kvstorage.path + "/{}".format(file))
 
+    def test_standalone_app(self):
+        import subprocess
+        def invoke(path, cmd, key_values):
+            cmd_format = 'python ../kvstorage.py {} {} {}'
+            with subprocess.Popen(cmd_format.format(path, cmd, key_values), stdout = subprocess.PIPE) as proc:
+                return proc.stdout.read()
+
+        invoke('.', 'set', '1 test')
+        res = invoke('.', 'get', '1')
+        str_res = res.decode().replace('\r\n', '')
+        self.assertEqual(str_res, 'test')
+        import shutil
+        shutil.rmtree('kv_storage_data', ignore_errors=False, onerror=None)
+
     def tearDown(self):
         for data in self.delete_list:
             try:
@@ -42,3 +57,7 @@ class TestKVStorage(unittest.TestCase):
             except OSError as e:
                 print("unable to correctly delete test files", file=sys.stderr)
                 print(e)
+
+
+if __name__ == '__main__':
+    unittest.main()

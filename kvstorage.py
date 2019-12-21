@@ -87,7 +87,7 @@ class KVstorage:
                     del self.dict[key]
                     self.load_data(current)
                     self.append(key, value)
-        print(self)
+        # print(self)
 
     def __contains__(self, key):
         if self.is_invalid_key(key):
