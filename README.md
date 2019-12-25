@@ -16,4 +16,5 @@
 path set key value
 path get key
 path in key
+path in del
 path set key value key value key value ...

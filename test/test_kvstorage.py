@@ -44,11 +44,11 @@ class TestKVStorage(unittest.TestCase):
         key_value_in_res = []
         for i in range(100):
             key_value_set.append(str(i))
-            key_value_set.append('test {}'.format(i))
+            key_value_set.append("test {}".format(i))
             key_value_get.append(str(i))
-            key_value_get_res.append('test {}'.format(i))
+            key_value_get_res.append("test {}".format(i))
             key_value_in_res.append(True)
-        key_value_get.append('test_None')
+        key_value_get.append("test_None")
         key_value_get_res.append(None)
         key_value_in_res.append(False)
         kvstorage.set_operation(key_value_set)
@@ -56,6 +56,23 @@ class TestKVStorage(unittest.TestCase):
         test_in = kvstorage.in_operation(key_value_get)
         self.assertEqual(test_get, key_value_get_res)
         self.assertEqual(test_in, key_value_in_res)
+
+        for i in range(100):
+            del kvstorage[str(i)]
+            key_value_get_res[i] = None
+        test_get = kvstorage.get_operation(key_value_get)
+        self.assertEqual(test_get, key_value_get_res)
+        for file in os.listdir(kvstorage.path):
+            self.delete_list.append(kvstorage.path + "/{}".format(file))
+
+    def test_contains_and_delitem(self):
+        kvstorage = KVstorage(1000)
+        kvstorage["test_del_key"] = "test_del_value"
+        in_true = "test_del_key" in kvstorage
+        self.assertEqual(in_true, True)
+        del kvstorage["test_del_key"]
+        in_false = "test_del_key" in kvstorage
+        self.assertEqual(in_false, False)
 
     def tearDown(self):
         for data in self.delete_list:
