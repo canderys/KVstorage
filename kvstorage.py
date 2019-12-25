@@ -167,40 +167,53 @@ class KVstorage:
     def is_invalid_key_or_value(self, key, value):
         return not (isinstance(key, (int, float, str)) and isinstance(value, (int, float, str)))
 
+    # реализация операций для приложения kvstorage.py
+    def set_operation(self, key_value):
+        if len(key_value) < 2 or len(key_value) % 2 != 0:
+            raise ValueError
+        for i in range(0, len(key_value), 2):
+            self.__setitem__(key_value[i], key_value[i + 1])
+
+    def get_operation(self, key_value):
+        if not key_value:
+            raise ValueError
+        res_list = []
+        for i in range(0, len(key_value)):
+            # print(k[key_value[i]])
+            res_list.append(self.__getitem__(key_value[i]))
+        return res_list
+
+    def in_operation(self, key_value):
+        if not key_value:
+            raise ValueError
+        res_list = []
+        for i in range(0, len(key_value)):
+            # print(key_value[i] in k)
+            res_list.append(self.__contains__(key_value[i]))
+        return res_list
+
 
 if __name__ == '__main__':
-    # print('Welcome to KVstorage!')
+    print('Welcome to KVstorage!')
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument('path')
     parser.add_argument('op')
     parser.add_argument('key_value', nargs='+')
     args = parser.parse_args()
-    # print('path: {}, operation: {}, key and values: {}'.format(args.path, args.op, args.key_value))
+    print('path: {}, operation: {}, key and values: {}'.format(args.path, args.op, args.key_value))
 
     try:
         k = KVstorage(300, args.path)
         if args.op == 'set':
             # print('it is set operation')
-            if len(args.key_value) < 2 or len(args.key_value) % 2 != 0:
-                raise ValueError
-            for i in range(0, len(args.key_value), 2):
-                # print(args.key_value[i], args.key_value[i + 1])
-                k[args.key_value[i]] = args.key_value[i + 1]
+            k.set_operation(args.key_value)
         elif args.op == 'get':
             # print('it is get operation')
-            if not args.key_value:
-                raise ValueError
-            for i in range(0, len(args.key_value)):
-                # print(args.key_value[i])
-                print(k[args.key_value[i]])
+            print(k.get_operation(args.key_value))
         elif args.op == 'in':
             # print('it is in operation')
-            if not args.key_value:
-                raise ValueError
-            for i in range(0, len(args.key_value)):
-                # print(args.key_value[i])
-                print(args.key_value[i] in k)
+            print(k.in_operation(args.key_value))
         else:
             print('invalid operation!')
         del k

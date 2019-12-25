@@ -36,19 +36,26 @@ class TestKVStorage(unittest.TestCase):
         for file in os.listdir(kvstorage.path):
             self.delete_list.append(kvstorage.path + "/{}".format(file))
 
-    def test_standalone_app(self):
-        import subprocess
-        def invoke(path, cmd, key_values):
-            cmd_format = 'python ../kvstorage.py {} {} {}'
-            with subprocess.Popen(cmd_format.format(path, cmd, key_values), stdout = subprocess.PIPE) as proc:
-                return proc.stdout.read()
-
-        invoke('.', 'set', '1 test')
-        res = invoke('.', 'get', '1')
-        str_res = res.decode().replace('\r\n', '')
-        self.assertEqual(str_res, 'test')
-        import shutil
-        shutil.rmtree('kv_storage_data', ignore_errors=False, onerror=None)
+    def test_standalone_operation(self):
+        kvstorage = KVstorage(1000)
+        key_value_set = []
+        key_value_get = []
+        key_value_get_res = []
+        key_value_in_res = []
+        for i in range(100):
+            key_value_set.append(str(i))
+            key_value_set.append('test {}'.format(i))
+            key_value_get.append(str(i))
+            key_value_get_res.append('test {}'.format(i))
+            key_value_in_res.append(True)
+        key_value_get.append('test_None')
+        key_value_get_res.append(None)
+        key_value_in_res.append(False)
+        kvstorage.set_operation(key_value_set)
+        test_get = kvstorage.get_operation(key_value_get)
+        test_in = kvstorage.in_operation(key_value_get)
+        self.assertEqual(test_get, key_value_get_res)
+        self.assertEqual(test_in, key_value_in_res)
 
     def tearDown(self):
         for data in self.delete_list:
