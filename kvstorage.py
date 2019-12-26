@@ -9,7 +9,7 @@ class KVstorage:
         self.dict = {}
         self.dict_file = None
         self.max_size = max_size
-        self.path = path + '/kv_storage_data'
+        self.path = path + "/kv_storage_data"
         if not os.path.exists(path):
             os.mkdir(path)
         if not os.path.exists(self.path):
@@ -18,7 +18,7 @@ class KVstorage:
         filename_list = os.listdir(self.path)
         # print('list of files: {}'.format(filename_list))
         if filename_list:
-            filename = self.path + '/' + filename_list[-1]
+            filename = self.path + "/" + filename_list[-1]
             self.load_data(filename)
         else:
             self.init_new_storage()
@@ -33,7 +33,7 @@ class KVstorage:
     def __getitem__(self, key):
         # print('getittem({})'.format(key))
         if self.is_invalid_key(key):
-            print('Error invalid key')
+            print("Error invalid key")
             return None
         if key in self.dict:
             return self.dict[key]
@@ -52,7 +52,7 @@ class KVstorage:
         # если объем пары ключ-значение больше
         # допустимого размера просто выходим
         if self.is_invalid_key_or_value(key, value):
-            print('Error: invalid key or value')
+            print("Error: invalid key or value")
             return
         if self._get_size(key) + self._get_size(value) > self.max_size:
             print("Error: object to big!")
@@ -95,7 +95,7 @@ class KVstorage:
 
     def __contains__(self, key):
         if self.is_invalid_key(key):
-            print('Error: invalid key')
+            print("Error: invalid key")
             return None
         if key in self.dict:
             return True
@@ -108,15 +108,30 @@ class KVstorage:
                 return True
         return False
 
+    def __delitem__(self, key):
+        if self.is_invalid_key(key):
+            print("Error: invalid key")
+            return None
+        if key in self.dict:
+            del self.dict[key]
+        else:
+            self.save(self.dict_file)
+            current = self.dict_file
+            file_with_key = self.find_and_open(key)
+            if file_with_key:
+                del self.dict[key]
+                self.save(file_with_key)
+                self.load_data(current)
+
     def __repr__(self):
         self.save(self.dict_file)
         current = self.dict_file
         filename_list = os.listdir(self.path)
-        info = 'KVstorage (current file is {}):'.format(current)
+        info = "KVstorage (current file is {}):".format(current)
         for filename in filename_list:
-            fullname = self.path + '/{}'.format(filename)
+            fullname = self.path + "/{}".format(filename)
             self.load_data(fullname)
-            info += '\nfilename: {}, size: {}, dict: {}'.format(
+            info += "\nfilename: {}, size: {}, dict: {}".format(
                 fullname, self._get_size(self.dict), self.dict)
         self.load_data(current)
         return info
@@ -140,7 +155,7 @@ class KVstorage:
     def load_data(self, filename):
         # print('load_data({})'.format(filename))
         if os.path.isfile(filename):
-            with open(filename, 'rb') as file:
+            with open(filename, "rb") as file:
                 self.dict = pickle.load(file)
                 # print('loaded dict: {}'.format(self.dict))
                 self.dict_file = filename
@@ -156,14 +171,14 @@ class KVstorage:
     def get_filename(self):
         file_number = 0
         while True:
-            filename = self.path + '/{}.dt'.format(file_number)
+            filename = self.path + "/{}.dt".format(file_number)
             if not os.path.isfile(filename):
                 return filename
             file_number += 1
 
     def save(self, filename):
         # print('save({})'.format(filename))
-        with open(filename, 'wb') as file:
+        with open(filename, "wb") as file:
             pickle.dump(self.dict, file)
 
     def is_invalid_key(self, key):
@@ -173,43 +188,66 @@ class KVstorage:
         return not (isinstance(key, (int, float, str)) and
                     isinstance(value, (int, float, str)))
 
+    # реализация операций для приложения kvstorage.py
+    def set_operation(self, key_value):
+        if len(key_value) < 2 or len(key_value) % 2 != 0:
+            raise ValueError
+        for i in range(0, len(key_value), 2):
+            self.__setitem__(key_value[i], key_value[i + 1])
 
-if __name__ == '__main__':
+    def get_operation(self, keys):
+        if not keys:
+            raise ValueError
+        res_list = []
+        for i in range(0, len(keys)):
+            res_list.append(self.__getitem__(keys[i]))
+        return res_list
+
+    def in_operation(self, keys):
+        if not keys:
+            raise ValueError
+        res_list = []
+        for i in range(0, len(keys)):
+            res_list.append(self.__contains__(keys[i]))
+        return res_list
+
+    def del_operation(self, keys):
+        if not keys:
+            raise ValueError
+        for i in range(0, len(keys)):
+            self.__delitem__(keys[i])
+
+
+if __name__ == "__main__":
+    # print("Welcome to KVstorage!")
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument('path')
-    parser.add_argument('op')
-    parser.add_argument('key_value', nargs='+')
+    parser.add_argument("path")
+    parser.add_argument("op")
+    parser.add_argument("key_value", nargs="+")
     args = parser.parse_args()
+    # print("path: {}, operation: {}, key and values: {}".format(args.path, args.op, args.key_value))
+
     try:
         k = KVstorage(300, args.path)
-        if args.op == 'set':
+        if args.op == "set":
             # print('it is set operation')
-            if len(args.key_value) < 2 or len(args.key_value) % 2 != 0:
-                raise ValueError
-            for i in range(0, len(args.key_value), 2):
-                # print(args.key_value[i], args.key_value[i + 1])
-                k[args.key_value[i]] = args.key_value[i + 1]
-        elif args.op == 'get':
+            k.set_operation(args.key_value)
+        elif args.op == "get":
             # print('it is get operation')
-            if not args.key_value:
-                raise ValueError
-            for i in range(0, len(args.key_value)):
-                # print(args.key_value[i])
-                print(k[args.key_value[i]])
-        elif args.op == 'in':
+            print(k.get_operation(args.key_value))
+        elif args.op == "in":
             # print('it is in operation')
-            if not args.key_value:
-                raise ValueError
-            for i in range(0, len(args.key_value)):
-                # print(args.key_value[i])
-                print(args.key_value[i] in k)
+            print(k.in_operation(args.key_value))
+        elif args.op == "del":
+            # print('it is del operation')
+            k.del_operation(args.key_value)
         else:
-            print('invalid operation!')
+            print("invalid operation!")
         del k
     except ValueError:
-        print('invalid enter key or value')
+        print("invalid enter key or value")
         del k
-    except Exception:
-        print('Unexpected error', sys.exc_info()[0])
+    except:
+        print("Unexpected error", sys.exc_info()[0])
         del k
