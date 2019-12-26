@@ -1,8 +1,8 @@
+from kvstorage import KVstorage
 import unittest
 import os
 import sys
 sys.path.append("..")
-from kvstorage import KVstorage
 
 
 class TestKVStorage(unittest.TestCase):
@@ -24,23 +24,25 @@ class TestKVStorage(unittest.TestCase):
     def test_contains_data(self):
         kvstorage = KVstorage(1000)
         for i in range(100):
-            kvstorage[i] = "test"
+            kvstorage[i] = "test {}".format(i)
         kvstorage = KVstorage(1000)
-        i = 101
-        while i < 200:
-            kvstorage[i] = "test"
+        for i in range(101, 200):
+            kvstorage[i] = "test {}".format(i)
             i += 1
-        self.assertEqual(kvstorage[101], "test")
-        self.assertEqual(kvstorage[1], "test")
-        self.assertEqual(kvstorage[199], "test")
+        self.assertEqual(kvstorage[101], "test {}".format(101))
+        self.assertEqual(kvstorage[1], "test {}".format(1))
+        self.assertEqual(kvstorage[199], "test {}".format(199))
         for file in os.listdir(kvstorage.path):
             self.delete_list.append(kvstorage.path + "/{}".format(file))
 
     def test_standalone_app(self):
         import subprocess
+
         def invoke(path, cmd, key_values):
-            cmd_format = 'python ../kvstorage.py {} {} {}'
-            with subprocess.Popen(cmd_format.format(path, cmd, key_values), stdout = subprocess.PIPE) as proc:
+            # тут было две точки перед слешом, так и должно быть? просто у меня не работало
+            cmd_format = 'python ./kvstorage.py {} {} {}'
+            with subprocess.Popen(cmd_format.format(path, cmd, key_values),
+                                  stdout=subprocess.PIPE) as proc:
                 return proc.stdout.read()
 
         invoke('.', 'set', '1 test')

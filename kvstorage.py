@@ -1,6 +1,7 @@
 import os
 import sys
 import pickle
+from pympler import asizeof
 
 
 class KVstorage:
@@ -21,6 +22,9 @@ class KVstorage:
             self.load_data(filename)
         else:
             self.init_new_storage()
+
+    def _get_size(self, obj):
+        return asizeof.asizeof(obj)
 
     def __del__(self):
         # print('dict file: {}'.format(self.dict_file))
@@ -43,14 +47,14 @@ class KVstorage:
             return value
 
     def __setitem__(self, key, value):
-        # print('current size: {}'.format(sys.getsizeof(self.dict)))
+        # print('current size: {}'.format(self._get_size(self.dict)))
         # print('setitem({}, {})'.format(key, value))
         # если объем пары ключ-значение больше
         # допустимого размера просто выходим
         if self.is_invalid_key_or_value(key, value):
             print('Error: invalid key or value')
             return
-        if sys.getsizeof(key) + sys.getsizeof(value) > self.max_size:
+        if self._get_size(key) + self._get_size(value) > self.max_size:
             print("Error: object to big!")
             return
         if key in self.dict:
@@ -69,7 +73,7 @@ class KVstorage:
             else:
                 # нашли ключ в одном из файлов
                 self.dict[key] = value
-                if sys.getsizeof(self.dict) <= self.max_size:
+                if self._get_size(self.dict) <= self.max_size:
                     # если перезаписать значение в файле в котором оно
                     # уже было, размер файла не привысит лимит
                     self.save(file_with_key)
@@ -112,13 +116,14 @@ class KVstorage:
         for filename in filename_list:
             fullname = self.path + '/{}'.format(filename)
             self.load_data(fullname)
-            info += '\nfilename: {}, size: {}, dict: {}'.format(fullname, sys.getsizeof(self.dict), self.dict)
+            info += '\nfilename: {}, size: {}, dict: {}'.format(
+                fullname, self._get_size(self.dict), self.dict)
         self.load_data(current)
         return info
 
     def append(self, key, value):
         self.dict[key] = value
-        if sys.getsizeof(self.dict) > self.max_size:
+        if self._get_size(self.dict) > self.max_size:
             del self.dict[key]
             self.init_new_storage()
             self.dict[key] = value
@@ -165,19 +170,17 @@ class KVstorage:
         return not isinstance(key, (int, float, str))
 
     def is_invalid_key_or_value(self, key, value):
-        return not (isinstance(key, (int, float, str)) and isinstance(value, (int, float, str)))
+        return not (isinstance(key, (int, float, str)) and
+                    isinstance(value, (int, float, str)))
 
 
 if __name__ == '__main__':
-    # print('Welcome to KVstorage!')
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument('path')
     parser.add_argument('op')
     parser.add_argument('key_value', nargs='+')
     args = parser.parse_args()
-    # print('path: {}, operation: {}, key and values: {}'.format(args.path, args.op, args.key_value))
-
     try:
         k = KVstorage(300, args.path)
         if args.op == 'set':
@@ -207,6 +210,6 @@ if __name__ == '__main__':
     except ValueError:
         print('invalid enter key or value')
         del k
-    except:
+    except Exception:
         print('Unexpected error', sys.exc_info()[0])
         del k
